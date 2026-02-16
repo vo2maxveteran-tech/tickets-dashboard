@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Delivery Dashboard</title>
+
+    <!-- Auto-refresh every 5 seconds -->
+    <script>
+        setTimeout(() => {
+            window.location.reload();
+        }, 5000);
+    </script>
+
+    <style>
+        body { font-family: Helvetica, Arial; background:#f5f7fa; }
+        table { width:100%; border-collapse: collapse; background:white; }
+        th, td { padding:12px; border-bottom:1px solid #eee; text-align:left; }
+        th { background:#fafafa; color:#666; }
+        .code { background:#eee; padding:4px 10px; border-radius:8px; }
+        .copy-btn { background:#2d6cdf; color:white; padding:6px 12px; border:none; border-radius:6px; cursor:pointer; }
+    </style>
+</head>
+<body>
+
+<h1>Email Delivery Dashboard</h1>
+<p>Monitor delivered emails and quickly copy access codes.</p>
+
+<table>
+    <tr>
+        <th>EMAIL</th>
+        <th>DELIVERED</th>
+        <th>CODE</th>
+        <th>COPY</th>
+    </tr>
+
+    {% for row in emails %}
+    <tr>
+        <td>{{ row.email }}</td>
+        <td>{{ row.timestamp }}</td>
+        <td><span class="code">{{ row.code }}</span></td>
+        <td>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('{{ row.code }}')">
+                Copy
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<p style="color:gray;">Auto-refreshes every 5 seconds</p>
+
+</body>
+</html>
