@@ -1,9 +1,17 @@
+# =========================
+# IMPORTS
+# =========================
+
 import imaplib
 import email
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
+
+# =========================
+# APP SETUP
+# =========================
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -13,6 +21,7 @@ templates = Jinja2Templates(directory="templates")
 # =========================
 
 SENDER_FILTER = "ticketmaster.com"
+CODE_TTL_SECONDS = 300  # 5 minutes
 
 INBOXES = [
     {"email": "iobbikevin1@gmail.com", "password": "amkomcuinutmzzrn"},
@@ -33,9 +42,14 @@ def extract_code(text):
     return match.group(0) if match else None
 
 
+def is_code_fresh(timestamp):
+    """Check if code is still valid"""
+    return datetime.now() - timestamp <= timedelta(seconds=CODE_TTL_SECONDS)
+
+
 def get_latest_ticketmaster_code(address, password):
     """
-    Find the most recent Ticketmaster email that CONTAINS a code.
+    Find the most recent Ticketmaster email that contains a code.
     """
     try:
         print(f"🔐 Logging into {address}")
@@ -52,7 +66,7 @@ def get_latest_ticketmaster_code(address, password):
         if not email_ids:
             return None, None
 
-        # Look through last 10 emails for a code
+        # Look through last 10 emails
         for email_id in reversed(email_ids[-10:]):
             _, data = mail.fetch(email_id, "(RFC822)")
             msg = email.message_from_bytes(data[0][1])
@@ -105,10 +119,10 @@ def dashboard(request: Request):
             "email": email_address,
             "code": code if code else "------",
             "timestamp": timestamp.strftime("%Y-%m-%d %I:%M:%S %p") if timestamp else "—",
-            "raw_time": timestamp  # used for sorting
+            "raw_time": timestamp
         })
 
-    # ✅ Sort newest first
+    # Sort newest first
     inbox_data.sort(
         key=lambda x: x["raw_time"] if x["raw_time"] else datetime.min,
         reverse=True
@@ -118,10 +132,6 @@ def dashboard(request: Request):
     for row in inbox_data:
         row.pop("raw_time")
 
-    print("\n📊 Final sorted inbox data:")
-    for row in inbox_data:
-        print(row)
-
     return templates.TemplateResponse(
         "index.html",
         {
@@ -129,3 +139,42 @@ def dashboard(request: Request):
             "emails": inbox_data
         }
     )
+
+
+# =========================
+# API ENDPOINT (AUTOMATION)
+# =========================
+
+@app.get("/latest-code")
+def latest_code():
+    """
+    Return the most recent valid Ticketmaster code across all inboxes.
+    """
+    latest_entry = None
+
+    for inbox in INBOXES:
+        email_address = inbox["email"]
+        password = inbox["password"]
+
+        code, timestamp = get_latest_ticketmaster_code(email_address, password)
+
+        if not code or not timestamp:
+            continue
+
+        # Skip expired codes
+        if not is_code_fresh(timestamp):
+            continue
+
+        if latest_entry is None or timestamp > latest_entry["raw_time"]:
+            latest_entry = {
+                "email": email_address,
+                "code": code,
+                "timestamp": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                "raw_time": timestamp,
+            }
+
+    if latest_entry:
+        latest_entry.pop("raw_time")
+        return latest_entry
+
+    return {"message": "No valid codes found"}
