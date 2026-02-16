@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Email Delivery Dashboard</title>
+
+    <!-- Auto refresh every 60 seconds -->
+    <meta http-equiv="refresh" content="60">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #f5f7fb;
+            margin: 0;
+            padding: 40px;
+            color: #1f2937;
+        }
+
+        h1 { margin-bottom: 5px; }
+        p.subtitle { margin-top: 0; color: #6b7280; }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        thead {
+            background-color: #f9fafb;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: .05em;
+            color: #6b7280;
+        }
+
+        th, td {
+            padding: 18px 20px;
+            border-bottom: 1px solid #eef2f7;
+            text-align: left;
+        }
+
+        .code-pill {
+            background: #e5e7eb;
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .copy-btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .copy-btn:hover { background-color: #1d4ed8; }
+        .footer { margin-top: 10px; font-size: 12px; color: #9ca3af; }
+    </style>
+
+    <script>
+        function copyCode(code) {
+            navigator.clipboard.writeText(code);
+            alert("Copied: " + code);
+        }
+    </script>
+</head>
+
+<body>
+
+<h1>Email Delivery Dashboard</h1>
+<p class="subtitle">Monitor delivered emails and quickly copy access codes.</p>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Delivered</th>
+                <th>Code</th>
+                <th>Copy</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in emails %}
+            <tr>
+                <td>{{ row.email }}</td>
+                <td>{{ row.timestamp }}</td>
+                <td><span class="code-pill">{{ row.code }}</span></td>
+                <td>
+                    <button class="copy-btn" onclick="copyCode('{{ row.code }}')">
+                        Copy
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="footer">
+    Auto-refreshes every 60 seconds
+</div>
+
+</body>
+</html>
