@@ -55,6 +55,7 @@ def get_latest_ticketmaster_code(address, password):
         if not email_ids:
             return None, None
 
+        # Check last 10 emails for performance
         for email_id in reversed(email_ids[-10:]):
             _, data = mail.fetch(email_id, "(RFC822)")
             msg = email.message_from_bytes(data[0][1])
@@ -103,6 +104,7 @@ def dashboard(request: Request):
             "raw_time": timestamp
         })
 
+    # Sort newest first
     inbox_data.sort(
         key=lambda x: x["raw_time"] if x["raw_time"] else datetime.min,
         reverse=True
@@ -118,7 +120,7 @@ def dashboard(request: Request):
 
 
 # =========================
-# API: ALL INBOXES (for auto-refresh)
+# API: ALL INBOXES
 # =========================
 
 @app.get("/api/inboxes")
@@ -150,7 +152,7 @@ def api_inboxes():
 
 
 # =========================
-# API: LATEST VALID CODE
+# API: LATEST CODE (TTL DISABLED FOR TESTING)
 # =========================
 
 @app.get("/latest-code")
@@ -166,8 +168,9 @@ def latest_code():
         if not code or not timestamp:
             continue
 
-        if not is_code_fresh(timestamp):
-            continue
+        # 🔴 TTL CHECK DISABLED FOR TESTING
+        # if not is_code_fresh(timestamp):
+        #     continue
 
         if latest_entry is None or timestamp > latest_entry["raw_time"]:
             latest_entry = {
